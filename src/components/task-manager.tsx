@@ -119,7 +119,7 @@ export default function TaskManager() {
   }
 
   return (
-    <div className="container mx-auto  pb-20 max-w-md md:max-w-2xl">
+    <div className="container mx-auto   max-w-md md:max-w-2xl">
       <h1 className="text-2xl font-bold mb-4 text-center">One thing</h1>
       
       <div className="space-y-4">
