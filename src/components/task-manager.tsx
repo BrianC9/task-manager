@@ -17,15 +17,17 @@ type Category = {
   id: number
   name: string
   tasks: Task[]
+  history: Task[]
 }
 
 const initialCategories: Category[] = [
-  { id: 1, name: "1 Year Goal", tasks: [] },
-  { id: 2, name: "6 Month Goal", tasks: [] },
-  { id: 3, name: "3 Month Goal", tasks: [] },
-  { id: 4, name: "1 Month Goal", tasks: [] },
-  { id: 5, name: "1 Week Goal", tasks: [] },
-  { id: 6, name: "Daily Goal", tasks: [] },
+  { id: 7, name: "3 Year Goal", tasks: [], history: [] },
+  { id: 1, name: "1 Year Goal", tasks: [], history: [] },
+  { id: 2, name: "6 Month Goal", tasks: [], history: [] },
+  { id: 3, name: "3 Month Goal", tasks: [], history: [] },
+  { id: 4, name: "1 Month Goal", tasks: [], history: [] },
+  { id: 5, name: "1 Week Goal", tasks: [], history: [] },
+  { id: 6, name: "Daily Goal", tasks: [], history: [] },
 ]
 
 export default function TaskManager() {
@@ -40,6 +42,7 @@ export default function TaskManager() {
   const [newTask, setNewTask] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [expandedCategory, setExpandedCategory] = useState<number | null>(null)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -56,7 +59,7 @@ export default function TaskManager() {
                 ...category,
                 tasks: [
                   { id: Date.now(), text: newTask, completed: false, active: true },
-                  ...category.tasks.map(task => ({ ...task, active: false }))
+                  ...(category.tasks || []).map(task => ({ ...task, active: false }))
                 ]
               }
             : category
@@ -64,6 +67,7 @@ export default function TaskManager() {
       )
       setNewTask("")
       setSelectedCategory(null)
+      setIsSheetOpen(false)
     }
   }
 
@@ -73,11 +77,11 @@ export default function TaskManager() {
         category.id === categoryId
           ? {
               ...category,
-              tasks: category.tasks.map(task => 
-                task.id === taskId
-                  ? { ...task, completed: !task.completed, active: !task.completed }
-                  : task.active ? { ...task, active: false } : task
-              )
+              tasks: (category.tasks || []).filter(task => task.id !== taskId),
+              history: [
+                ...(category.history || []),
+                { ...(category.tasks || []).find(task => task.id === taskId)!, completed: true, active: false }
+              ]
             }
           : category
       )
@@ -90,7 +94,7 @@ export default function TaskManager() {
         category.id === categoryId
           ? {
               ...category,
-              tasks: category.tasks.map(task => 
+              tasks: (category.tasks || []).map(task => 
                 task.id === taskId
                   ? { ...task, active: true, completed: false }
                   : { ...task, active: false }
@@ -106,12 +110,12 @@ export default function TaskManager() {
   }
 
   return (
-    <div className="container mx-auto p-4 pb-20 max-w-md md:max-w-2xl">
-      <h1 className="text-2xl font-bold mb-4 text-center">Gestor de Tareas</h1>
+    <div className="container mx-auto  pb-20 max-w-md md:max-w-2xl">
+      <h1 className="text-2xl font-bold mb-4 text-center">One thing</h1>
       
       <div className="space-y-4">
         {categories.map(category => {
-          const activeTask = category.tasks.find(task => task.active);
+          const activeTask = (category.tasks || []).find(task => task.active);
           const isExpanded = expandedCategory === category.id;
           return (
             <Card key={category.id} className="overflow-hidden">
@@ -138,9 +142,9 @@ export default function TaskManager() {
                 </div>
                 {isExpanded && (
                   <div className="border-t p-4">
-                    <h4 className="font-semibold mb-2 text-sm">Todas las tareas:</h4>
+                    <h4 className="font-semibold mb-2 text-sm">Tareas pendientes:</h4>
                     <ul className="space-y-2">
-                      {category.tasks.map(task => (
+                      {(category.tasks || []).filter(task => !task.active).map(task => (
                         <li key={task.id} className="flex items-center text-sm">
                           <Checkbox
                             id={`task-${task.id}`}
@@ -149,26 +153,37 @@ export default function TaskManager() {
                           />
                           <label
                             htmlFor={`task-${task.id}`}
-                            className={`ml-2 ${task.completed ? 'line-through text-gray-500' : ''}`}
+                            className="ml-2"
                           >
                             {task.text}
                           </label>
-                          {!task.completed && !task.active && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="ml-auto text-xs py-1 px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveTask(category.id, task.id);
-                              }}
-                            >
-                              Activar
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto text-xs py-1 px-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTask(category.id, task.id);
+                            }}
+                          >
+                            Activar
+                          </Button>
                         </li>
                       ))}
                     </ul>
+                    {(category.history || []).length > 0 && (
+                      <>
+                        <h4 className="font-semibold mb-2 mt-4 text-sm">Historial:</h4>
+                        <ul className="space-y-2">
+                          {(category.history || []).map(task => (
+                            <li key={task.id} className="flex items-center text-sm text-gray-500">
+                              <Checkbox checked={true} disabled />
+                              <span className="ml-2 line-through">{task.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -177,7 +192,7 @@ export default function TaskManager() {
         })}
       </div>
 
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button 
             variant="default" 
