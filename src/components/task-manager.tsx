@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Plus } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 
 type Task = {
   id: number
@@ -21,7 +21,6 @@ type Category = {
 }
 
 const initialCategories: Category[] = [
-  { id: 7, name: "3 Year Goal", tasks: [], history: [] },
   { id: 1, name: "1 Year Goal", tasks: [], history: [] },
   { id: 2, name: "6 Month Goal", tasks: [], history: [] },
   { id: 3, name: "3 Month Goal", tasks: [], history: [] },
@@ -109,6 +108,16 @@ export default function TaskManager() {
     setExpandedCategory(expandedCategory === categoryId ? null : categoryId)
   }
 
+  const clearHistory = (categoryId: number) => {
+    setCategories(prevCategories =>
+      prevCategories.map(category =>
+        category.id === categoryId
+          ? { ...category, history: [] }
+          : category
+      )
+    )
+  }
+
   return (
     <div className="container mx-auto  pb-20 max-w-md md:max-w-2xl">
       <h1 className="text-2xl font-bold mb-4 text-center">One thing</h1>
@@ -146,11 +155,11 @@ export default function TaskManager() {
                     <ul className="space-y-2">
                       {(category.tasks || []).filter(task => !task.active).map(task => (
                         <li key={task.id} className="flex items-center text-sm">
-                          <Checkbox
+                          {isExpanded && (<Checkbox
                             id={`task-${task.id}`}
                             checked={task.completed}
                             onCheckedChange={() => toggleTaskCompletion(category.id, task.id)}
-                          />
+                          />)}
                           <label
                             htmlFor={`task-${task.id}`}
                             className="ml-2"
@@ -173,7 +182,18 @@ export default function TaskManager() {
                     </ul>
                     {(category.history || []).length > 0 && (
                       <>
-                        <h4 className="font-semibold mb-2 mt-4 text-sm">Historial:</h4>
+                        <div className="flex justify-between items-center mt-4 mb-2">
+                          <h4 className="font-semibold text-sm">Historial:</h4>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => clearHistory(category.id)}
+                            className="text-xs py-1 px-2"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Limpiar historial
+                          </Button>
+                        </div>
                         <ul className="space-y-2">
                           {(category.history || []).map(task => (
                             <li key={task.id} className="flex items-center text-sm text-gray-500">
